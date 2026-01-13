@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import axios from 'axios';
 import toast from 'react-hot-toast';
 
 import SearchBar from '../SearchBar/SearchBar';
@@ -10,8 +9,7 @@ import MovieModal from '../MovieModal/MovieModal';
 
 import type { Movie } from '../../types/movie';
 import styles from './App.module.css';
-
-
+import { fetchMovies } from '../../services/movieService';
 
 function App() {
   const [movies, setMovies] = useState<Movie[]>([]);
@@ -34,31 +32,7 @@ function App() {
     setIsLoading(true);
 
     try {
-      const TMDB_TOKEN = import.meta.env.VITE_TMDB_TOKEN;
-
-   const response = await axios.get(
-  'https://api.themoviedb.org/3/search/movie',
-  {
-    params: { query },
-    headers: {
-      Authorization: `Bearer ${TMDB_TOKEN}`,
-    },
-  }
-);
-
-      const results: Movie[] = (response.data.results as unknown[]).map(item => {
-        const movie = item as Movie;
-
-        return {
-          id: movie.id,
-          poster_path: movie.poster_path ?? '',
-          backdrop_path: movie.backdrop_path ?? '',
-          title: movie.title,
-          overview: movie.overview,
-          release_date: movie.release_date,
-          vote_average: movie.vote_average,
-        };
-      });
+      const results = await fetchMovies(query);
 
       if (results.length === 0) {
         toast('No movies found for your request.');
@@ -66,7 +40,7 @@ function App() {
       }
 
       setMovies(results);
-    } catch {
+    } catch (error) {
       setHasError(true);
     } finally {
       setIsLoading(false);
@@ -85,7 +59,9 @@ function App() {
         <MovieGrid movies={movies} onSelect={handleSelectMovie} />
       ) : null}
 
-      {selectedMovie && <MovieModal movie={selectedMovie} onClose={handleCloseModal} />}
+      {selectedMovie && (
+        <MovieModal movie={selectedMovie} onClose={handleCloseModal} />
+      )}
     </div>
   );
 }
