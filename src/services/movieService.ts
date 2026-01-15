@@ -3,15 +3,10 @@ import type { Movie } from '../types/movie';
 
 const TMDB_TOKEN = import.meta.env.VITE_TMDB_TOKEN;
 
-interface TmdbMovieDto {
-  id: number;
-  poster_path: string | null;
-  backdrop_path: string | null;
-  title: string;
-  overview: string;
-  release_date: string;
-  vote_average: number;
-}
+type TmdbMovieDto = Omit<Movie, 'poster_path' | 'backdrop_path'> & {
+  poster_path: Movie['poster_path'] | null;
+  backdrop_path: Movie['backdrop_path'] | null;
+};
 
 interface TmdbSearchResponse {
   results: TmdbMovieDto[];
@@ -33,13 +28,13 @@ export async function fetchMovies(query: string): Promise<Movie[]> {
     params: { query: normalizedQuery },
   });
 
-  return response.data.results.map(item => ({
-    id: item.id,
-    poster_path: item.poster_path ?? '',
-    backdrop_path: item.backdrop_path ?? '',
-    title: item.title,
-    overview: item.overview,
-    release_date: item.release_date,
-    vote_average: item.vote_average,
-  }));
+  const results: Movie[] = response.data.results.map(
+    ({ poster_path, backdrop_path, ...rest }): Movie => ({
+      ...rest,
+      poster_path: poster_path ?? '',
+      backdrop_path: backdrop_path ?? '',
+    })
+  );
+
+  return results;
 }
