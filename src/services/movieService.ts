@@ -1,15 +1,10 @@
-import axios, { type AxiosResponse } from 'axios';
+import axios from 'axios';
 import type { Movie } from '../types/movie';
 
 const TMDB_TOKEN = import.meta.env.VITE_TMDB_TOKEN;
 
-type TmdbMovieDto = Omit<Movie, 'poster_path' | 'backdrop_path'> & {
-  poster_path: Movie['poster_path'] | null;
-  backdrop_path: Movie['backdrop_path'] | null;
-};
-
 interface TmdbSearchResponse {
-  results: TmdbMovieDto[];
+  results: Movie[];
 }
 
 const tmdbApi = axios.create({
@@ -24,17 +19,16 @@ export async function fetchMovies(query: string): Promise<Movie[]> {
   const normalizedQuery = query.trim();
   if (!normalizedQuery) return [];
 
-  const response: AxiosResponse<TmdbSearchResponse> = await tmdbApi.get('/search/movie', {
-    params: { query: normalizedQuery },
-  });
-
-  const results: Movie[] = response.data.results.map(
-    ({ poster_path, backdrop_path, ...rest }): Movie => ({
-      ...rest,
-      poster_path: poster_path ?? '',
-      backdrop_path: backdrop_path ?? '',
-    })
+  const response = await tmdbApi.get<TmdbSearchResponse>(
+    '/search/movie',
+    {
+      params: { query: normalizedQuery },
+    }
   );
 
-  return results;
+  return response.data.results.map(movie => ({
+    ...movie,
+    poster_path: movie.poster_path ?? '',
+    backdrop_path: movie.backdrop_path ?? '',
+  }));
 }
